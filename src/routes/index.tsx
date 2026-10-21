@@ -321,7 +321,7 @@ function Contact() {
           encargos.
         </p>
         <a
-          href="mailto:hello@jorgesoots.dev"
+          href="mailto:jorgesootsalfaro@gmail.com"
           className="btn-3d terminal-btn mt-10 inline-flex items-center gap-2 rounded-md px-6 py-3 text-sm font-medium"
         >
           <span className="text-muted-foreground">$</span>
