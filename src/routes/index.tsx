@@ -81,7 +81,7 @@ function Navbar() {
     </header>
   );
 }
-function Hero() {
+function Hero({ onNavigate }: { onNavigate?: (label: string) => void }) {
   return (
     <section
       id="inicio"
@@ -114,15 +114,16 @@ function Hero() {
             experiencias que se sienten vivas.
           </p>
 
-          <div className="mt-10">
-            <a
-              href="#proyectos"
+                    <div className="mt-10">
+            <button
+              type="button"
+              onClick={() => onNavigate?.("proyectos")}
               className="text-3d terminal-btn inline-flex items-center gap-2 rounded-md px-5 py-3 text-sm font-medium"
             >
               <span className="text-muted-foreground">$</span>
               ./deploy.sh
               <span className="blink-cursor" />
-            </a>
+            </button>
           </div>
         </div>
 
@@ -224,7 +225,7 @@ function SobreMi() {
   );
 }
 
-function Projects() {
+function Projects({ onNavigate }: { onNavigate?: (label: string) => void }) {
   return (
     <section id="proyectos" className="relative border-t border-border/60 py-24 md:py-32">
       <div className="relative mx-auto max-w-6xl px-6 ">
@@ -280,12 +281,13 @@ function Projects() {
                 ))}
               </ul>
 
-              <a
-                href="#contacto"
+                            <button
+                type="button"
+                onClick={() => onNavigate?.("contacto")}
                 className="mt-6 inline-flex items-center gap-1 font-mono text-xs text-cyan/80 transition-colors hover:text-cyan"
               >
                 {"->"} view_source
-              </a>
+              </button>
             </article>
           ))}
         </div>
@@ -305,8 +307,8 @@ function Contact() {
         className="pointer-events-none absolute left-1/2 top-1/2 h-[40vh] w-[80vh] -translate-x-1/2 -translate-y-1/2 opacity-20 blur-[120px]"
         style={{ background: "radial-gradient(circle, var(--color-violet), transparent 70%)" }}
       />
-      <div className="relative mx-auto max-w-3xl px-6 ">
-        <div className="w-full md:w-1/2">
+        <div className="relative mx-auto max-w-3xl px-6 pointer-events-auto">
+          <div className="w-full md:w-1/2">
         <p className="font-mono text-xs uppercase tracking-[0.35em] text-cyan/70">
           {"//"} contacto
         </p>
@@ -479,6 +481,19 @@ const AmbientAudio = forwardRef<{ start: () => void }>((_, ref) => {
 function Index() {
   const [sceneReady, setSceneReady] = useState(false);
 const audioUnlockRef = useRef<{ start: () => void }>(null);
+const timelineRef = useRef<gsap.core.Timeline | null>(null);
+
+const scrollToSection = (label: string) => {
+  const tl = timelineRef.current;
+  const st = tl?.scrollTrigger;
+  if (!tl || !st) return;
+  const labelTime = tl.labels[label];
+  if (labelTime === undefined) return;
+  const progress = labelTime / tl.duration();
+  const target = st.start + progress * (st.end - st.start);
+  window.scrollTo({ top: target, behavior: "smooth" });
+};
+
   useLayoutEffect(() => {
     return () => {
       ScrollTrigger.getAll().forEach((s) => s.kill());
@@ -591,7 +606,7 @@ const audioUnlockRef = useRef<{ start: () => void }>(null);
   z: punto.rotation.z,
 });
 
-    const tl = gsap.timeline({
+        const tl = gsap.timeline({
       scrollTrigger: {
         trigger: document.body,
         start: "top top",
@@ -608,6 +623,8 @@ const audioUnlockRef = useRef<{ start: () => void }>(null);
         playerRig.position.z = proxyCamara.z + rigOffsetZ;
       }
     });
+
+    tl.addLabel("inicio", 0);
 
     const easeType = "power1.inOut";
     const dur = 4;
@@ -647,7 +664,8 @@ const audioUnlockRef = useRef<{ start: () => void }>(null);
         ease: easeType,
       }, "<")
       .to(proxyCamara, { ...getTarget(puntoSkills), duration: dur, ease: easeType }, lag)
-      .add(animIn("#skills"), "-=1"); // Muestra Skills un poco antes de llegar
+      .add(animIn("#skills"), "-=1") // Muestra Skills un poco antes de llegar
+      .addLabel("skills");
 
     // --- TRAMO 2: Skills -> Sobre mí ---
     tl.add(animOut("#skills"))
@@ -663,7 +681,8 @@ const audioUnlockRef = useRef<{ start: () => void }>(null);
         y: puntoSobreMi.position.y,
         z: puntoSobreMi.position.z ,
         duration: dur, ease: easeType }, lag)
-      .add(animIn("#sobre-mi"), "-=1");
+      .add(animIn("#sobre-mi"), "-=1")
+      .addLabel("sobre-mi");
 
     // --- TRAMO 3: Sobre mí -> Proyectos ---
     tl.add(animOut("#sobre-mi"))
@@ -675,7 +694,8 @@ const audioUnlockRef = useRef<{ start: () => void }>(null);
         ease: easeType,
       }, "<")
       .to(proxyCamara, { ...getTarget(puntoProyectos), duration: dur, ease: easeType }, lag)
-      .add(animIn("#proyectos"), "-=1");
+      .add(animIn("#proyectos"), "-=1")
+      .addLabel("proyectos");
 
     // --- TRAMO 4: Proyectos -> Contacto ---
     tl.add(animOut("#proyectos"))
@@ -687,8 +707,11 @@ const audioUnlockRef = useRef<{ start: () => void }>(null);
         ease: easeType,
       }, "<")
       .to(proxyCamara, { ...getTarget(puntoContacto), duration: dur, ease: easeType }, lag)
-      .add(animIn("#contacto"), "-=1");
-      // NUEVO: la escena y el timeline ya están listos, ocultar el loader
+      .add(animIn("#contacto"), "-=1")
+      .addLabel("contacto");
+
+    timelineRef.current = tl;
+    // NUEVO: la escena y el timeline ya están listos, ocultar el loader
     setSceneReady(true);
   };
   return (
@@ -712,10 +735,10 @@ const audioUnlockRef = useRef<{ start: () => void }>(null);
         <Navbar />
         <AmbientAudio ref={audioUnlockRef}/>
         <main className="fixed top-0 left-0 w-full h-screen pointer-events-none">
-          <Hero />
+          <Hero onNavigate={scrollToSection} />
           <Skills />
           <SobreMi />
-          <Projects />
+          <Projects onNavigate={scrollToSection} />
           <Contact />
         </main>
         <div className="absolute bottom-0 w-full">
